@@ -48,6 +48,7 @@ const Signup = () => {
   async function confirmSignUp({ username, code }) {
     try {
       const userLog = await Auth.confirmSignUp(username, code);
+      toast.success("Login Success");
       Router.push("/login");
     } catch (error) {}
   }
@@ -57,6 +58,7 @@ const Signup = () => {
       await confirmSignUp(formData);
     } else {
       await signInWithEmailAndPassword(formData);
+      toast.success("Verification code was sent on your email address");
       setShowCode(true);
     }
   };
