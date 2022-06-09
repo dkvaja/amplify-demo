@@ -3,7 +3,7 @@ import Head from "next/head";
 import "../styles/globals.css";
 import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
-import Amplify, { Auth } from "aws-amplify";
+import { Auth, Amplify } from "aws-amplify";
 import awsExports from "../src/aws-exports";
 import { AuthContext } from "../src/context/authContext";
 import { ToastContainer, toast } from "react-toastify";
