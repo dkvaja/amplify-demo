@@ -16,6 +16,7 @@ import { Auth } from "aws-amplify";
 import { useUser } from "../src/context/authContext";
 import Router from "next/router";
 import { checkUserLoggedIn } from "../src/utils/auth";
+import { toast } from "react-toastify";
 
 const Signup = () => {
   const [showCode, setShowCode] = useState(false);
