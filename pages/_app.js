@@ -4,7 +4,7 @@ import "../styles/globals.css";
 import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { Auth, Amplify } from "aws-amplify";
-import awsExports from "./aws-exports";
+import awsExports from "../src/aws-exports";
 import { AuthContext } from "../src/context/authContext";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
