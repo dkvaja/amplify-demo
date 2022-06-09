@@ -48,8 +48,8 @@ const Signup = () => {
 
   async function confirmSignUp({ username, code }) {
     try {
-      const userLog = await Auth.confirmSignUp(username, code);
-      toast.success("Login Success");
+      await Auth.confirmSignUp(username, code);
+      toast.success("Verification Success");
       Router.push("/login");
     } catch (error) {}
   }
