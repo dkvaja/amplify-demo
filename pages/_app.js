@@ -3,6 +3,13 @@ import Head from "next/Head";
 import "../styles/globals.css";
 import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
+import Amplify, { Auth } from "aws-amplify";
+import awsExports from "../src/aws-exports";
+import { AuthContext } from "../src/context/authContext";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+Amplify.configure({ ...awsExports, ssr: true });
 
 function MyApp({ Component, pageProps }) {
   const theme = createTheme();
@@ -12,10 +19,23 @@ function MyApp({ Component, pageProps }) {
         <title>Amplify Demo - Home</title>
         <meta name="viewport" content="initial-scale=1, width=device-width" />
       </Head>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <Component {...pageProps} />
-      </ThemeProvider>
+      <AuthContext>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <Component {...pageProps} />
+        </ThemeProvider>
+        <ToastContainer
+          position="top-right"
+          autoClose={5000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+        />
+      </AuthContext>
     </React.Fragment>
   );
 }
