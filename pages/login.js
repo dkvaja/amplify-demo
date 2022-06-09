@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import Head from "next/Head";
+import Head from "next/head";
 import Router from "next/router";
 import {
   Avatar,
