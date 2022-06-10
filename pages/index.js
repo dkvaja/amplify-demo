@@ -18,13 +18,15 @@ import { useUser } from "../src/context/authContext";
 import { Auth } from "aws-amplify";
 import { toast } from "react-toastify";
 import { checkUserLoggedIn } from "../src/utils/auth";
+import { LOGIN } from "../src/constants/routes";
+import { STORAGE_KEYS, toastMessages } from "../src/constants/keywords";
 
 export default function Home() {
   const { user } = useUser();
 
   useEffect(() => {
     const localUser = checkUserLoggedIn();
-    if (!localUser) Router.push("/login");
+    if (!localUser) Router.push(LOGIN);
   }, []);
 
   const cards = [1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -32,10 +34,12 @@ export default function Home() {
   const signOut = async () => {
     try {
       await Auth.signOut({ global: true });
-      localStorage.removeItem("@amplify");
-      toast.success("Logged Out success");
-      Router.push("/login");
-    } catch (error) {}
+      localStorage.removeItem(STORAGE_KEYS.AMPLIFY_USER);
+      toast.success(toastMessages.LOG_OUT_SUCCESS);
+      Router.push(LOGIN);
+    } catch (error) {
+      toast.error(toastMessages.GENERAL_ERROR);
+    }
   };
 
   const handleLogOut = async (e) => {
@@ -44,17 +48,25 @@ export default function Home() {
   };
   return (
     <>
-      <AppBar position="relative">
-        <Toolbar>
-          <CameraIcon sx={{ mr: 2 }} />
-          <Typography variant="h6" color="inherit" noWrap>
-            Hello, {user?.username}
-          </Typography>
-          <Button variant="contained" color="secondary" onClick={handleLogOut}>
-            Log Out
-          </Button>
-        </Toolbar>
-      </AppBar>
+      <Box sx={{ flexGrow: 1 }}>
+        <AppBar position="relative">
+          <Toolbar>
+            <CameraIcon sx={{ mr: 2 }} />
+            <Typography
+              variant="h6"
+              color="inherit"
+              component="div"
+              sx={{ flexGrow: 1 }}
+            >
+              I - Todo
+            </Typography>
+            <Button variant="contained" onClick={handleLogOut}>
+              Log Out
+            </Button>
+          </Toolbar>
+        </AppBar>
+      </Box>
+
       <main>
         <Box
           sx={{
@@ -71,7 +83,7 @@ export default function Home() {
               color="text.primary"
               gutterBottom
             >
-              Album layout
+              Hello, {user?.username}! Welcome to I-Todo
             </Typography>
             <Typography
               variant="h5"

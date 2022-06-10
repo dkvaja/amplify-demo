@@ -17,6 +17,8 @@ import { useUser } from "../src/context/authContext";
 import Router from "next/router";
 import { checkUserLoggedIn } from "../src/utils/auth";
 import { toast } from "react-toastify";
+import { HOME, LOGIN } from "../src/constants/routes";
+import { toastMessages } from "../src/constants/keywords";
 
 const Signup = () => {
   const [showCode, setShowCode] = useState(false);
@@ -24,7 +26,7 @@ const Signup = () => {
 
   useEffect(() => {
     const localUser = checkUserLoggedIn();
-    if (localUser) Router.push("/");
+    if (localUser) Router.push(HOME);
   }, []);
 
   const {
@@ -43,15 +45,20 @@ const Signup = () => {
           email,
         },
       });
-    } catch (error) {}
+    } catch (error) {
+      toast.error(toastMessages.GENERAL_ERROR);
+    }
   };
 
   async function confirmSignUp({ username, code }) {
     try {
       await Auth.confirmSignUp(username, code);
-      toast.success("Verification Success");
-      Router.push("/login");
-    } catch (error) {}
+      toast.success(toastMessages.VERIFY_CODE_SUCCESS);
+      Router.push(LOGIN);
+    } catch (error) {
+      console.log(error);
+      toast.error(toastMessages.GENERAL_ERROR);
+    }
   }
 
   const onSubmit = async (formData) => {
@@ -59,7 +66,7 @@ const Signup = () => {
       await confirmSignUp(formData);
     } else {
       await signInWithEmailAndPassword(formData);
-      toast.success("Verification code was sent on your email address");
+      toast.success(toastMessages.CODE_SENT_SUCCESS);
       setShowCode(true);
     }
   };
@@ -169,7 +176,7 @@ const Signup = () => {
             </Button>
             <Grid container justifyContent="flex-end">
               <Grid item>
-                <Link href="/login" variant="body2">
+                <Link href={LOGIN} variant="body2">
                   Already have an account? Sign in
                 </Link>
               </Grid>

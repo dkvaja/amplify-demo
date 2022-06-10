@@ -17,6 +17,8 @@ import { Auth } from "aws-amplify";
 import { useUser } from "../src/context/authContext";
 import { toast } from "react-toastify";
 import { checkUserLoggedIn } from "../src/utils/auth";
+import { HOME, SIGNUP } from "../src/constants/routes";
+import { STORAGE_KEYS, toastMessages } from "../src/constants/keywords";
 
 const Login = () => {
   const {
@@ -29,7 +31,7 @@ const Login = () => {
 
   useEffect(() => {
     const localUser = checkUserLoggedIn();
-    if (localUser) Router.push("/");
+    if (localUser) Router.push(HOME);
   }, []);
 
   const onSubmit = async (formData) => {
@@ -41,11 +43,16 @@ const Login = () => {
       const amplifyUser = await Auth.signIn(username, password);
       if (amplifyUser) {
         setUser(amplifyUser);
-        localStorage.setItem("@amplify", JSON.stringify(amplifyUser));
-        Router.push("/");
-        toast.success("Logged in success");
+        localStorage.setItem(
+          STORAGE_KEYS.AMPLIFY_USER,
+          JSON.stringify(amplifyUser)
+        );
+        Router.push(HOME);
+        toast.success(toastMessages.LOG_IN_SUCCESS);
       }
-    } catch (error) {}
+    } catch (error) {
+      toast.error(toastMessages.GENERAL_ERROR);
+    }
   }
 
   return (
@@ -113,7 +120,7 @@ const Login = () => {
             <Grid container>
               <Grid item xs></Grid>
               <Grid item>
-                <Link href="/signup" variant="body2">
+                <Link href={SIGNUP} variant="body2">
                   {"Don't have an account? Sign Up"}
                 </Link>
               </Grid>
