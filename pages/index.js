@@ -11,17 +11,41 @@ import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import Container from "@mui/material/Container";
+import DeleteIcon from "@mui/icons-material/Delete";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import SendRoundedIcon from "@mui/icons-material/SendRounded";
 
 import Router from "next/router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useUser } from "../src/context/authContext";
 import { Auth } from "aws-amplify";
 import { toast } from "react-toastify";
-import { checkUserLoggedIn } from "../src/utils/auth";
+import { checkUserLoggedIn, getToken } from "../src/utils/auth";
 import { LOGIN } from "../src/constants/routes";
 import { STORAGE_KEYS, toastMessages } from "../src/constants/keywords";
+import { MUTATIONS, QUERIES } from "../src/graphql/services";
+import { listTodos } from "../src/graphql/queries";
+import {
+  Checkbox,
+  IconButton,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  TextField,
+} from "@mui/material";
+import { useForm } from "react-hook-form";
+import { createTodo } from "../src/graphql/mutations";
 
 export default function Home() {
+  const [todos, setTodos] = useState(null);
+
+  const {
+    register,
+    formState: { errors },
+    handleSubmit,
+  } = useForm();
+
   const { user } = useUser();
 
   useEffect(() => {
@@ -29,7 +53,38 @@ export default function Home() {
     if (!localUser) Router.push(LOGIN);
   }, []);
 
-  const cards = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+  useEffect(() => {
+    fetchToDo();
+  }, []);
+
+  const fetchToDo = async () => {
+    const userToken = getToken();
+    try {
+      const payLoad = {
+        limit: 10,
+        nextToken: userToken,
+      };
+      const res = await QUERIES(listTodos, payLoad);
+      if (res.data) {
+        const { listTodos } = res.data;
+        if (listTodos.items && listTodos.items.length > 0) {
+          setTodos(listTodos.items);
+        }
+      }
+    } catch (error) {}
+  };
+
+  const handleAddTodo = async (todoData) => {
+    const { title, description } = todoData;
+    const payLoad = {
+      name: title,
+      description,
+    };
+    try {
+      const res = await MUTATIONS(createTodo, { input: payLoad });
+      console.log("res :>> ", res);
+    } catch (error) {}
+  };
 
   const signOut = async () => {
     try {
@@ -46,6 +101,9 @@ export default function Home() {
     e?.preventDefault();
     await signOut();
   };
+
+  // const todo = { name: "My first todo", description: "Hello world!" };
+
   return (
     <>
       <Box sx={{ flexGrow: 1 }}>
@@ -83,7 +141,7 @@ export default function Home() {
               color="text.primary"
               gutterBottom
             >
-              Hello, {user?.username}! Welcome to I-Todo
+              Hello, {user?.username}!
             </Typography>
             <Typography
               variant="h5"
@@ -91,74 +149,88 @@ export default function Home() {
               color="text.secondary"
               paragraph
             >
-              Something short and leading about the collection below—its
-              contents, the creator, etc. Make it short and sweet, but not too
-              short so folks don&apos;t simply skip over it entirely.
+              Welcome to I-Todo
             </Typography>
-            <Stack
-              sx={{ pt: 4 }}
-              direction="row"
-              spacing={2}
-              justifyContent="center"
-            >
-              <Button variant="contained">Main call to action</Button>
-              <Button variant="outlined">Secondary action</Button>
+            <Stack sx={{ pt: 4 }} direction="column" justifyContent="center">
+              <Stack
+                sx={{ pt: 4 }}
+                direction="row"
+                spacing={2}
+                component="form"
+                onSubmit={handleSubmit(handleAddTodo)}
+              >
+                <TextField
+                  id="outlined-basic"
+                  label="Todo Title"
+                  variant="outlined"
+                  {...register("title", {
+                    required: "Title is required",
+                  })}
+                  error={errors.title}
+                  helperText={errors.title ? errors.title.message : ""}
+                />
+                <TextField
+                  id="outlined-basic"
+                  label="Todo Description"
+                  variant="outlined"
+                  {...register("description", {
+                    required: "Description is required",
+                  })}
+                  error={errors.description}
+                  helperText={
+                    errors.description ? errors.description.message : ""
+                  }
+                />
+                <IconButton type="submit">
+                  <SendRoundedIcon />
+                </IconButton>
+              </Stack>
+              <List
+                sx={{
+                  width: "100%",
+                  maxWidth: 360,
+                  bgcolor: "background.paper",
+                }}
+              >
+                {todos &&
+                  todos.length > 0 &&
+                  todos.map(({ name, description, id }, index) => {
+                    const labelId = `checkbox-list-label-${name}`;
+
+                    return (
+                      <ListItem
+                        key={id}
+                        secondaryAction={
+                          <IconButton edge="end" aria-label="comments">
+                            <DeleteIcon />
+                          </IconButton>
+                        }
+                        disablePadding
+                      >
+                        <ListItemButton
+                          role={undefined}
+                          // onClick={handleToggle(value)}
+                          dense
+                        >
+                          <ListItemIcon>
+                            <Checkbox
+                              edge="start"
+                              // checked={checked.indexOf(value) !== -1}
+                              tabIndex={-1}
+                              disableRipple
+                              inputProps={{ "aria-labelledby": labelId }}
+                            />
+                          </ListItemIcon>
+                          <ListItemText id={labelId} primary={name} />
+                        </ListItemButton>
+                      </ListItem>
+                    );
+                  })}
+              </List>
             </Stack>
           </Container>
         </Box>
-        <Container sx={{ py: 8 }} maxWidth="md">
-          {/* End hero unit */}
-          <Grid container spacing={4}>
-            {cards.map((card) => (
-              <Grid item key={card} xs={12} sm={6} md={4}>
-                <Card
-                  sx={{
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                  }}
-                >
-                  <CardMedia
-                    component="img"
-                    sx={{
-                      pt: "56.25%",
-                    }}
-                    image="https://source.unsplash.com/random"
-                    alt="random"
-                  />
-                  <CardContent sx={{ flexGrow: 1 }}>
-                    <Typography gutterBottom variant="h5" component="h2">
-                      Heading
-                    </Typography>
-                    <Typography>
-                      This is a media card. You can use this section to describe
-                      the content.
-                    </Typography>
-                  </CardContent>
-                  <CardActions>
-                    <Button size="small">View</Button>
-                    <Button size="small">Edit</Button>
-                  </CardActions>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        </Container>
       </main>
-      {/* Footer */}
-      <Box sx={{ bgcolor: "background.paper", p: 6 }} component="footer">
-        <Typography variant="h6" align="center" gutterBottom>
-          Footer
-        </Typography>
-        <Typography
-          variant="subtitle1"
-          align="center"
-          color="text.secondary"
-          component="p"
-        >
-          Something here to give the footer a purpose!
-        </Typography>
-      </Box>
     </>
   );
 }

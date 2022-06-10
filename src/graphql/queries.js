@@ -13,6 +13,7 @@ export const getTodo = /* GraphQL */ `
     }
   }
 `;
+
 export const listTodos = /* GraphQL */ `
   query ListTodos(
     $filter: ModelTodoFilterInput
