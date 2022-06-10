@@ -19,15 +19,17 @@ import { toast } from "react-toastify";
 import { checkUserLoggedIn } from "../src/utils/auth";
 import { HOME, SIGNUP } from "../src/constants/routes";
 import { STORAGE_KEYS, toastMessages } from "../src/constants/keywords";
+import { useState } from "react";
+import LoadingButton from "@mui/lab/LoadingButton";
 
 const Login = () => {
+  const [isUserLoggingIn, setIsUserLoggingIn] = useState(false);
+
   const {
     register,
     formState: { errors },
     handleSubmit,
   } = useForm();
-
-  const { user, setUser } = useUser();
 
   useEffect(() => {
     const localUser = checkUserLoggedIn();
@@ -37,12 +39,13 @@ const Login = () => {
   const onSubmit = async (formData) => {
     await signIn(formData);
   };
+
   async function signIn(formData) {
     const { username, password } = formData;
+    setIsUserLoggingIn(true);
     try {
       const amplifyUser = await Auth.signIn(username, password);
       if (amplifyUser) {
-        setUser(amplifyUser);
         localStorage.setItem(
           STORAGE_KEYS.AMPLIFY_USER,
           JSON.stringify(amplifyUser)
@@ -51,7 +54,9 @@ const Login = () => {
         toast.success(toastMessages.LOG_IN_SUCCESS);
       }
     } catch (error) {
-      toast.error(toastMessages.GENERAL_ERROR);
+      toast.error(error?.message || toastMessages.GENERAL_ERROR);
+    } finally {
+      setIsUserLoggingIn(false);
     }
   }
 
@@ -109,14 +114,15 @@ const Login = () => {
               error={errors.password}
               helperText={errors.password ? errors.password.message : ""}
             />
-            <Button
+            <LoadingButton
+              loading={isUserLoggingIn}
               type="submit"
               fullWidth
               variant="contained"
               sx={{ mt: 3, mb: 2 }}
             >
               Sign In
-            </Button>
+            </LoadingButton>
             <Grid container>
               <Grid item xs></Grid>
               <Grid item>

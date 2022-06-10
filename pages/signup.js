@@ -19,10 +19,11 @@ import { checkUserLoggedIn } from "../src/utils/auth";
 import { toast } from "react-toastify";
 import { HOME, LOGIN } from "../src/constants/routes";
 import { toastMessages } from "../src/constants/keywords";
+import LoadingButton from "@mui/lab/LoadingButton";
 
 const Signup = () => {
   const [showCode, setShowCode] = useState(false);
-  const { user, setUser } = useUser();
+  const [isUserSigningUp, setIsUserSigningUp] = useState(false);
 
   useEffect(() => {
     const localUser = checkUserLoggedIn();
@@ -37,6 +38,7 @@ const Signup = () => {
 
   const signInWithEmailAndPassword = async (userData) => {
     const { username, password, email } = userData;
+    setIsUserSigningUp(true);
     try {
       const { user } = await Auth.signUp({
         username,
@@ -45,19 +47,25 @@ const Signup = () => {
           email,
         },
       });
+      toast.success(toastMessages.CODE_SENT_SUCCESS);
+      setShowCode(true);
     } catch (error) {
-      toast.error(toastMessages.GENERAL_ERROR);
+      toast.error(error?.message || toastMessages.GENERAL_ERROR);
+    } finally {
+      setIsUserSigningUp(false);
     }
   };
 
   async function confirmSignUp({ username, code }) {
+    setIsUserSigningUp(true);
     try {
       await Auth.confirmSignUp(username, code);
       toast.success(toastMessages.VERIFY_CODE_SUCCESS);
       Router.push(LOGIN);
     } catch (error) {
-      console.log(error);
-      toast.error(toastMessages.GENERAL_ERROR);
+      toast.error(error?.message || toastMessages.GENERAL_ERROR);
+    } finally {
+      setIsUserSigningUp(false);
     }
   }
 
@@ -66,8 +74,6 @@ const Signup = () => {
       await confirmSignUp(formData);
     } else {
       await signInWithEmailAndPassword(formData);
-      toast.success(toastMessages.CODE_SENT_SUCCESS);
-      setShowCode(true);
     }
   };
 
@@ -166,14 +172,16 @@ const Signup = () => {
                 </Grid>
               )}
             </Grid>
-            <Button
+            <LoadingButton
+              loading={isUserSigningUp}
               type="submit"
               fullWidth
               variant="contained"
               sx={{ mt: 3, mb: 2 }}
             >
               {showCode ? "Confirm Code" : "Sign Up"}
-            </Button>
+            </LoadingButton>
+            <Button></Button>
             <Grid container justifyContent="flex-end">
               <Grid item>
                 <Link href={LOGIN} variant="body2">
