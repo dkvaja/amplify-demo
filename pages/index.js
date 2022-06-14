@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import AppBar from "@mui/material/AppBar";
 import Button from "@mui/material/Button";
 import CameraIcon from "@mui/icons-material/PhotoCamera";
@@ -18,7 +19,7 @@ import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import Router from "next/router";
 import { useEffect, useState } from "react";
 import { useUser } from "../src/context/authContext";
-import { Auth } from "aws-amplify";
+import { API, Auth } from "aws-amplify";
 import { toast } from "react-toastify";
 import { checkUserLoggedIn, getToken } from "../src/utils/auth";
 import { LOGIN } from "../src/constants/routes";
@@ -35,15 +36,18 @@ import {
   TextField,
 } from "@mui/material";
 import { useForm } from "react-hook-form";
-import { createTodo } from "../src/graphql/mutations";
+import { createTodo, deleteTodo } from "../src/graphql/mutations";
+import { GRAPHQL_AUTH_MODE } from "@aws-amplify/api";
 
 export default function Home() {
   const [todos, setTodos] = useState(null);
+  const [isTodoAdding, setIsTodoAdding] = useState(false);
 
   const {
     register,
     formState: { errors },
     handleSubmit,
+    setValue,
   } = useForm();
 
   const { user } = useUser();
@@ -80,10 +84,27 @@ export default function Home() {
       name: title,
       description,
     };
+    setIsTodoAdding(true);
     try {
-      const res = await MUTATIONS(createTodo, { input: payLoad });
-      console.log("res :>> ", res);
-    } catch (error) {}
+      const res = await API.graphql({
+        query: createTodo,
+        variables: { input: payLoad },
+        authMode: GRAPHQL_AUTH_MODE.AMAZON_COGNITO_USER_POOLS,
+      });
+      if (res.data) {
+        setTodos((prevState) =>
+          prevState
+            ? [...prevState, res.data.createTodo]
+            : [res.data.createTodo]
+        );
+        setValue("title", null);
+        setValue("description", null);
+      }
+    } catch (error) {
+      toast.error(error?.message || toastMessages.GENERAL_ERROR);
+    } finally {
+      setIsTodoAdding(false);
+    }
   };
 
   const signOut = async () => {
@@ -102,7 +123,25 @@ export default function Home() {
     await signOut();
   };
 
-  // const todo = { name: "My first todo", description: "Hello world!" };
+  const handleDeleteTodo = async (todoId) => {
+    if (!todoId) return;
+    try {
+      const res = await API.graphql({
+        query: deleteTodo,
+        variables: { input: { id: todoId } },
+        authMode: GRAPHQL_AUTH_MODE.AMAZON_COGNITO_USER_POOLS,
+      });
+      if (res.data) {
+        let updatedTodos = [...todos];
+        updatedTodos = updatedTodos.filter(
+          ({ id }) => id !== res.data.deleteTodo.id
+        );
+        setTodos(updatedTodos);
+      }
+    } catch (error) {
+      toast.error(toastMessages.GENERAL_ERROR);
+    }
+  };
 
   return (
     <>
@@ -181,47 +220,40 @@ export default function Home() {
                     errors.description ? errors.description.message : ""
                   }
                 />
-                <IconButton type="submit">
+                <IconButton type="submit" disabled={isTodoAdding}>
                   <SendRoundedIcon />
                 </IconButton>
               </Stack>
               <List
                 sx={{
                   width: "100%",
-                  maxWidth: 360,
                   bgcolor: "background.paper",
                 }}
               >
                 {todos &&
                   todos.length > 0 &&
-                  todos.map(({ name, description, id }, index) => {
+                  todos.map(({ name, description, id }) => {
                     const labelId = `checkbox-list-label-${name}`;
-
                     return (
                       <ListItem
                         key={id}
                         secondaryAction={
-                          <IconButton edge="end" aria-label="comments">
+                          <IconButton
+                            edge="end"
+                            aria-label="comments"
+                            onClick={() => handleDeleteTodo(id)}
+                          >
                             <DeleteIcon />
                           </IconButton>
                         }
                         disablePadding
                       >
-                        <ListItemButton
-                          role={undefined}
-                          // onClick={handleToggle(value)}
-                          dense
-                        >
-                          <ListItemIcon>
-                            <Checkbox
-                              edge="start"
-                              // checked={checked.indexOf(value) !== -1}
-                              tabIndex={-1}
-                              disableRipple
-                              inputProps={{ "aria-labelledby": labelId }}
-                            />
-                          </ListItemIcon>
-                          <ListItemText id={labelId} primary={name} />
+                        <ListItemButton role={undefined} dense>
+                          <ListItemText
+                            id={labelId}
+                            primary={name}
+                            secondary={description}
+                          />
                         </ListItemButton>
                       </ListItem>
                     );
